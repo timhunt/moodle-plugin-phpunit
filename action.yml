@@ -1,0 +1,38 @@
+name: 'Moodel plugin PHPunit'
+description: 'Run PHPunit on a Moodle plugin. Results are output and saved to a file phpunit-results.txt'
+
+inputs:
+  frankenstyle: # Ideally we could get this by grepping the plugin version.php.
+    description: 'Name of this plugin. For example filter_embedquestion.'
+    required: true
+  dbtype:
+    description: 'Type of database to use. One of pgsql or mysql.'
+    required: false
+    default: pgsql
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create required locale
+      run: sudo locale-gen en_AU.UTF-8
+      shell: bash
+
+    - name: Create moodledata directory
+      run: mkdir moodledata
+      shell: bash
+
+    - name: Create moodledata directory
+      run: mkdir phpunit-moodledata
+      shell: bash
+
+    - name: Create config.php
+      run: cat ${{ github.action_path }}/config.phpunit.php | sed 's/%%DBTYPE%%/${{ inputs.dbtype }}/g' > config.php
+      shell: bash
+
+    - name: Install Moodle
+      run: php admin/tool/phpunit/cli/init.php
+      shell: bash
+
+    - name: Run PHPunit
+      run: vendor/bin/phpunit --testsuite ${{ inputs.frankenstyle }}_testsuite | tee phpunit-results.txt
+      shell: bash
